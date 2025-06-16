@@ -1,0 +1,120 @@
+<?php
+$mysqli = new mysqli("localhost", "root", "", "epiguard");
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get') {
+    $result = $mysqli->query("SELECT * FROM caregivers");
+    $data = [];
+    while ($row = $result->fetch_assoc()) {
+        $data[] = $row;
+    }
+    echo json_encode($data);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $phone_number = $_POST['phone_number'];
+    $address = $_POST['address'];
+    $relationship_to_patient = $_POST['relationship_to_patient'];
+
+    if (isset($_POST['caregiver_id'])) {
+        $caregiver_id = $_POST['caregiver_id'];
+        $stmt = $mysqli->prepare("UPDATE caregivers SET phone_number=?, address=?, relationship_to_patient=? WHERE caregiver_id=?");
+        $stmt->bind_param("sssi", $phone_number, $address, $relationship_to_patient, $caregiver_id);
+    } else {
+        $stmt = $mysqli->prepare("INSERT INTO caregivers (phone_number, address, relationship_to_patient) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $phone_number, $address, $relationship_to_patient);
+    }
+
+    $stmt->execute();
+    header("Location: caregivers.php");
+    exit;
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Caregivers</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-container">
+    <?php include 'sidebar.php'; ?>
+
+    <main class="main-content">
+        <div class="content-header">
+            <div class="header-left">
+                <h1>Caregivers</h1>
+                <button class="action-btn" onclick="openModal()">+ Add Caregiver</button>
+            </div>
+        </div>
+
+        <div class="table-container large">
+            <div class="table-header">
+                <h3>Caregiver List</h3>
+            </div>
+            <table class="data-table" id="caregivers-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Phone Number</th>
+                        <th>Address</th>
+                        <th>Relationship</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- Modal -->
+<div id="caregiverModal" class="modal" style="display:none;">
+    <form class="modal-content" method="POST">
+        <input type="hidden" name="caregiver_id" id="caregiver_id">
+        <h2>Caregiver Details</h2>
+        <input name="phone_number" placeholder="Phone Number" required>
+        <input name="address" placeholder="Address" required>
+        <input name="relationship_to_patient" placeholder="Relationship" required>
+        <button type="submit" class="action-btn">Save</button>
+        <button type="button" class="action-btn" onclick="closeModal()">Cancel</button>
+    </form>
+</div>
+
+<script>
+function openModal(data = null) {
+    document.getElementById("caregiverModal").style.display = "block";
+    if (data) {
+        document.getElementById("caregiver_id").value = data.caregiver_id;
+        document.querySelector("input[name='phone_number']").value = data.phone_number;
+        document.querySelector("input[name='address']").value = data.address;
+        document.querySelector("input[name='relationship_to_patient']").value = data.relationship_to_patient;
+    } else {
+        document.querySelector("form").reset();
+    }
+}
+function closeModal() {
+    document.getElementById("caregiverModal").style.display = "none";
+}
+
+fetch("caregivers.php?action=get")
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.querySelector("#caregivers-table tbody");
+        data.forEach(c => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${c.caregiver_id}</td>
+                <td>${c.phone_number}</td>
+                <td>${c.address}</td>
+                <td>${c.relationship_to_patient}</td>
+                <td><button class="action-btn" onclick='openModal(${JSON.stringify(c)})'>Edit</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    });
+</script>
+</body>
+</html>

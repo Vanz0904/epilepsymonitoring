@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerts - EpiGuard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation (same as dashboard.html) -->
+        <aside class="sidebar">
+            <!-- Sidebar content (same as dashboard.html) -->
+            <!-- Omitted for brevity -->
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-left">
+                    <button id="toggle-sidebar">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Alerts</h1>
+                </div>
+                <div class="header-right">
+                    <!-- Same as dashboard.html -->
+                </div>
+            </header>
+
+            <!-- Alerts Content -->
+            <div class="content-container">
+                <!-- Action Bar -->
+                <div class="action-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="alert-search" placeholder="Search alerts...">
+                    </div>
+                    <div class="filter-box">
+                        <select id="event-filter">
+                            <option value="all">All Events</option>
+                            <option value="seizure">Seizure</option>
+                            <option value="fall">Fall</option>
+                            <option value="abnormal">Abnormal Activity</option>
+                        </select>
+                        <select id="status-filter">
+                            <option value="all">All Statuses</option>
+                            <option value="new">New</option>
+                            <option value="acknowledged">Acknowledged</option>
+                            <option value="resolved">Resolved</option>
+                        </select>
+                        <div class="date-range">
+                            <input type="date" id="date-from">
+                            <span>to</span>
+                            <input type="date" id="date-to">
+                        </div>
+                        <button id="apply-filters" class="btn-secondary">Apply</button>
+                    </div>
+                </div>
+
+                <!-- Alerts Table -->
+                <div class="table-responsive">
+                    <table class="data-table" id="alerts-table">
+                        <thead>
+                            <tr>
+                                <th>Alert ID</th>
+                                <th>Patient</th>
+                                <th>Event Type</th>
+                                <th>Severity</th>
+                                <th>Date & Time</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="pagination-btn" id="prev-page" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="pagination-info">
+                        Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                    </div>
+                    <button class="pagination-btn" id="next-page">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Alert Details Modal -->
+    <div class="modal" id="alert-details-modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>Alert Details</h2>
+                <button class="close-btn" id="close-alert-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-info-grid">
+                    <div class="alert-info-column">
+                        <div class="info-group">
+                            <label>Alert ID:</label>
+                            <span id="alert-id"></span>
+                        </div>
+                        <div class="info-group">
+                            <label>Patient:</label>
+                            <span id="alert-patient"></span>
+                        </div>
+                        <div class="info-group">
+                            <label>Event Type:</label>
+                            <span id="alert-type"></span>
+                        </div>
+                        <div class="info-group">
+                            <label>Severity:</label>
+                            <span id="alert-severity"></span>
+                        </div>
+                    </div>
+                    <div class="alert-info-column">
+                        <div class="info-group">
+                            <label>Date & Time:</label>
+                            <span id="alert-datetime"></span>
+                        </div>
+                        <div class="info-group">
+                            <label>Duration:</label>
+                            <span id="alert-duration"></span>
+                        </div>
+                        <div class="info-group">
+                            <label>Device ID:</label>
+                            <span id="alert-device"></span>
+                        </div>
+                        <div class="info-group">
+                            <label>Location:</label>
+                            <span id="alert-location"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert-visualization">
+                    <h3>Sensor Data</h3>
+                    <div class="chart" id="sensor-data-chart"></div>
+                </div>
+
+                <div class="action-history">
+                    <h3>Alert History</h3>
+                    <ul class="timeline" id="alert-timeline">
+                        <!-- Timeline items will be populated dynamically -->
+                    </ul>
+                </div>
+
+                <div class="alert-actions">
+                    <div class="notification-status">
+                        <h3>Notifications</h3>
+                        <ul class="notification-list" id="notification-list">
+                            <!-- Notification items will be populated dynamically -->
+                        </ul>
+                    </div>
+                    <div class="form-group">
+                        <label for="alert-notes">Notes</label>
+                        <textarea id="alert-notes" rows="3" placeholder="Add notes about this alert..."></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-secondary" id="acknowledge-btn">Acknowledge</button>
+                        <button class="btn-primary" id="resolve-btn">Resolve</button>
+                        <button class="btn-warning" id="resend-alert-btn">Resend Alert</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/alerts.js"></script>
+    <script src="js/api.js"></script>
+</body>
+</html>

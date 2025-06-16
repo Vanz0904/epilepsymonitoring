@@ -1,0 +1,136 @@
+<?php
+// Handle backend logic (fetch/add/edit)
+$mysqli = new mysqli("localhost", "root", "", "epiguard");
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get') {
+    $result = $mysqli->query("SELECT * FROM patients");
+    $patients = [];
+    while ($row = $result->fetch_assoc()) {
+        $patients[] = $row;
+    }
+    echo json_encode($patients);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $fullname = $_POST['fullname'];
+    $birthdate = $_POST['birthdate'];
+    $address = $_POST['address'];
+    $contact_number = $_POST['contact_number'];
+    $emergency_contact = $_POST['emergency_contact'];
+    $caregiver_id = $_POST['caregiver_id'];
+
+    if (isset($_POST['patient_id'])) {
+        // Update existing
+        $patient_id = $_POST['patient_id'];
+        $stmt = $mysqli->prepare("UPDATE patients SET fullname=?, birthdate=?, address=?, contact_number=?, emergency_contact=?, caregiver_id=? WHERE patient_id=?");
+        $stmt->bind_param("ssssssi", $fullname, $birthdate, $address, $contact_number, $emergency_contact, $caregiver_id, $patient_id);
+    } else {
+        // Add new
+        $stmt = $mysqli->prepare("INSERT INTO patients (fullname, birthdate, address, contact_number, emergency_contact, caregiver_id) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssi", $fullname, $birthdate, $address, $contact_number, $emergency_contact, $caregiver_id);
+    }
+
+    $stmt->execute();
+    header("Location: patients.php");
+    exit;
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patients</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-container">
+    <?php include 'sidebar.php'; ?>
+
+    <main class="main-content">
+        <div class="content-header">
+            <div class="header-left">
+                <h1>Patients</h1>
+                <button class="action-btn" onclick="openModal()">+ Add Patient</button>
+            </div>
+        </div>
+
+        <div class="table-container large">
+            <div class="table-header">
+                <h3>Patient List</h3>
+            </div>
+            <table class="data-table" id="patients-table">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Birthdate</th>
+                        <th>Address</th>
+                        <th>Contact</th>
+                        <th>Emergency</th>
+                        <th>Caregiver ID</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- Modal -->
+<div id="patientModal" class="modal" style="display:none;">
+    <form class="modal-content" method="POST">
+        <input type="hidden" name="patient_id" id="patient_id">
+        <h2>Patient Details</h2>
+        <input name="fullname" placeholder="Full Name" required>
+        <input name="birthdate" type="date" required>
+        <input name="address" placeholder="Address" required>
+        <input name="contact_number" placeholder="Contact Number" required>
+        <input name="emergency_contact" placeholder="Emergency Contact" required>
+        <input name="caregiver_id" placeholder="Caregiver ID" required>
+        <button type="submit" class="action-btn">Save</button>
+        <button type="button" class="action-btn" onclick="closeModal()">Cancel</button>
+    </form>
+</div>
+
+<script>
+function openModal(data = null) {
+    document.getElementById("patientModal").style.display = "block";
+    if (data) {
+        document.getElementById("patient_id").value = data.patient_id;
+        document.querySelector("input[name='fullname']").value = data.fullname;
+        document.querySelector("input[name='birthdate']").value = data.birthdate;
+        document.querySelector("input[name='address']").value = data.address;
+        document.querySelector("input[name='contact_number']").value = data.contact_number;
+        document.querySelector("input[name='emergency_contact']").value = data.emergency_contact;
+        document.querySelector("input[name='caregiver_id']").value = data.caregiver_id;
+    } else {
+        document.querySelector("form").reset();
+    }
+}
+function closeModal() {
+    document.getElementById("patientModal").style.display = "none";
+}
+
+fetch("patients.php?action=get")
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.querySelector("#patients-table tbody");
+        data.forEach(p => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${p.fullname}</td>
+                <td>${p.birthdate}</td>
+                <td>${p.address}</td>
+                <td>${p.contact_number}</td>
+                <td>${p.emergency_contact}</td>
+                <td>${p.caregiver_id}</td>
+                <td><button class="action-btn" onclick='openModal(${JSON.stringify(p)})'>Edit</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    });
+</script>
+</body>
+</html>
